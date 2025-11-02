@@ -45,8 +45,7 @@ class TarefasActivity : AppCompatActivity() {
             },
             onTarefaLongClick = { tarefa ->
                 tarefas.remove(tarefa)
-                adapter.notifyDataSetChanged()
-                salvarTarefas()
+                ordenarESalvar()
             }
         )
         recycler.adapter = adapter
@@ -63,6 +62,7 @@ class TarefasActivity : AppCompatActivity() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_tarefa, null)
         val inputTarefa = dialogView.findViewById<EditText>(R.id.inputTarefa)
         val inputLocalizacao = dialogView.findViewById<EditText>(R.id.inputLocalizacao)
+        val inputHorario = dialogView.findViewById<EditText>(R.id.inputHorario)
 
         val builder = AlertDialog.Builder(this)
         builder.setView(dialogView)
@@ -71,12 +71,14 @@ class TarefasActivity : AppCompatActivity() {
         builder.setPositiveButton("Adicionar") { dialog, _ ->
             val textoTarefa = inputTarefa.text.toString()
             val textoLocalizacao = inputLocalizacao.text.toString()
+            val textoHorario = inputHorario.text.toString()
 
             if (textoTarefa.isNotEmpty()) {
-                val novaTarefa = Tarefa(textoTarefa, false, if (textoLocalizacao.isNotEmpty()) textoLocalizacao else null)
+                val horario = textoHorario.toIntOrNull()
+                val localizacao = if (textoLocalizacao.isNotEmpty()) textoLocalizacao else null
+                val novaTarefa = Tarefa(textoTarefa, false, localizacao, horario)
                 tarefas.add(novaTarefa)
-                adapter.notifyDataSetChanged()
-                salvarTarefas()
+                ordenarESalvar()
             }
             dialog.dismiss()
         }
@@ -85,6 +87,14 @@ class TarefasActivity : AppCompatActivity() {
         }
 
         builder.show()
+    }
+
+    private fun ordenarESalvar() {
+        // Tarefas com horário vêm primeiro, ordenadas pelo horário.
+        // Tarefas sem horário vêm depois.
+        tarefas.sortWith(compareBy( { it.horario == null }, { it.horario } ))
+        adapter.notifyDataSetChanged()
+        salvarTarefas()
     }
 
     private fun salvarTarefas() {
@@ -101,7 +111,7 @@ class TarefasActivity : AppCompatActivity() {
             val tarefasSalvas: ArrayList<Tarefa> = gson.fromJson(tarefasJson, tipo)
             tarefas.clear()
             tarefas.addAll(tarefasSalvas)
-            adapter.notifyDataSetChanged()
+            ordenarESalvar() // Ordena ao carregar também
         }
     }
 }

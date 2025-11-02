@@ -23,6 +23,7 @@ class TarefaAdapter(
     inner class TarefaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val checkBox: CheckBox = view.findViewById(R.id.checkTarefa)
         val textoTarefa: TextView = view.findViewById(R.id.textoTarefa)
+        val textoHorario: TextView = view.findViewById(R.id.textoHorario)
         val btnIr: ImageButton = view.findViewById(R.id.btnIr)
 
         fun bind(tarefa: Tarefa) {
@@ -37,7 +38,13 @@ class TarefaAdapter(
                 textoTarefa.alpha = 1.0f
             }
 
-            // Usar isNullOrBlank para uma verificação mais segura
+            if (tarefa.horario != null) {
+                textoHorario.visibility = View.VISIBLE
+                textoHorario.text = "${tarefa.horario}h"
+            } else {
+                textoHorario.visibility = View.GONE
+            }
+
             if (!tarefa.localizacao.isNullOrBlank()) {
                 btnIr.visibility = View.VISIBLE
                 btnIr.setOnClickListener {
@@ -48,7 +55,6 @@ class TarefaAdapter(
                     try {
                         context.startActivity(mapIntent)
                     } catch (e: ActivityNotFoundException) {
-                        // Se nenhum app de mapa for encontrado, exibe uma mensagem
                         Toast.makeText(context, "Nenhum aplicativo de mapa encontrado.", Toast.LENGTH_SHORT).show()
                         Log.e("TarefaAdapter", "Erro ao abrir mapa: ", e)
                     }

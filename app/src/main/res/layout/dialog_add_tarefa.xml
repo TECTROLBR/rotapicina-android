@@ -18,4 +18,13 @@
         android:layout_marginTop="8dp"
         android:hint="Localização (opcional)" />
 
+    <EditText
+        android:id="@+id/inputHorario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Horário (opcional, 0-23)"
+        android:inputType="number"
+        android:maxLength="2" />
+
 </LinearLayout>
