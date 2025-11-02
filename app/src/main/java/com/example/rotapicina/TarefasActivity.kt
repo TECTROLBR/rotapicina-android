@@ -22,6 +22,7 @@ class TarefasActivity : AppCompatActivity() {
     private lateinit var adapter: TarefaAdapter
     private val gson = Gson()
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var contadorTarefas: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +32,7 @@ class TarefasActivity : AppCompatActivity() {
         sharedPreferences = getSharedPreferences("TAREFAS_APP", Context.MODE_PRIVATE)
 
         val titulo = findViewById<TextView>(R.id.tituloDia)
+        contadorTarefas = findViewById(R.id.contadorTarefas)
         titulo.text = "Tarefas de $diaSemana"
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerTarefas)
@@ -40,12 +42,14 @@ class TarefasActivity : AppCompatActivity() {
             tarefas,
             onTarefaClick = { tarefa ->
                 tarefa.concluida = !tarefa.concluida
-                adapter.notifyDataSetChanged()
-                salvarTarefas()
+                ordenarESalvar() // Reordena e salva, atualizando o contador
             },
             onTarefaLongClick = { tarefa ->
                 tarefas.remove(tarefa)
                 ordenarESalvar()
+            },
+            onTarefaEditClick = { tarefa ->
+                mostrarDialogoEditarTarefa(tarefa)
             }
         )
         recycler.adapter = adapter
@@ -56,6 +60,12 @@ class TarefasActivity : AppCompatActivity() {
         }
 
         carregarTarefas()
+    }
+
+    private fun atualizarContador() {
+        val concluidas = tarefas.count { it.concluida }
+        val total = tarefas.size
+        contadorTarefas.text = "$concluidas/$total"
     }
 
     private fun mostrarDialogoAdicionarTarefa() {
@@ -89,12 +99,45 @@ class TarefasActivity : AppCompatActivity() {
         builder.show()
     }
 
+    private fun mostrarDialogoEditarTarefa(tarefa: Tarefa) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_tarefa, null)
+        val inputTarefa = dialogView.findViewById<EditText>(R.id.inputTarefa)
+        val inputLocalizacao = dialogView.findViewById<EditText>(R.id.inputLocalizacao)
+        val inputHorario = dialogView.findViewById<EditText>(R.id.inputHorario)
+
+        inputTarefa.setText(tarefa.texto)
+        inputLocalizacao.setText(tarefa.localizacao ?: "")
+        inputHorario.setText(tarefa.horario?.toString() ?: "")
+
+        val builder = AlertDialog.Builder(this)
+        builder.setView(dialogView)
+        builder.setTitle("Editar Tarefa")
+
+        builder.setPositiveButton("Salvar") { dialog, _ ->
+            val textoTarefa = inputTarefa.text.toString()
+            val textoLocalizacao = inputLocalizacao.text.toString()
+            val textoHorario = inputHorario.text.toString()
+
+            if (textoTarefa.isNotEmpty()) {
+                tarefa.texto = textoTarefa
+                tarefa.localizacao = if (textoLocalizacao.isNotEmpty()) textoLocalizacao else null
+                tarefa.horario = textoHorario.toIntOrNull()
+                ordenarESalvar()
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancelar") { dialog, _ ->
+            dialog.cancel()
+        }
+
+        builder.show()
+    }
+
     private fun ordenarESalvar() {
-        // Tarefas com horário vêm primeiro, ordenadas pelo horário.
-        // Tarefas sem horário vêm depois.
-        tarefas.sortWith(compareBy( { it.horario == null }, { it.horario } ))
+        tarefas.sortWith(compareBy({ it.horario == null }, { it.horario }))
         adapter.notifyDataSetChanged()
         salvarTarefas()
+        atualizarContador() // Atualiza o contador
     }
 
     private fun salvarTarefas() {
@@ -111,7 +154,9 @@ class TarefasActivity : AppCompatActivity() {
             val tarefasSalvas: ArrayList<Tarefa> = gson.fromJson(tarefasJson, tipo)
             tarefas.clear()
             tarefas.addAll(tarefasSalvas)
-            ordenarESalvar() // Ordena ao carregar também
+            ordenarESalvar()
+        } else {
+            atualizarContador() // Garante que o contador apareça como 0/0 se não houver tarefas
         }
     }
 }
