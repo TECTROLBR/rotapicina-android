@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F5F5F5">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tarefas Semanais"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#1976D2"
+        android:layout_marginBottom="32dp"/>
+
+    <Button
+        android:id="@+id/btnSegunda"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Segunda-feira"
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="#2196F3"
+        android:padding="16dp"/>
+
+    <Button
+        android:id="@+id/btnTerca"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Terça-feira"
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="#2196F3"
+        android:padding="16dp"/>
+
+    <Button
+        android:id="@+id/btnQuarta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quarta-feira"
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="#2196F3"
+        android:padding="16dp"/>
+
+    <Button
+        android:id="@+id/btnQuinta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quinta-feira"
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="#2196F3"
+        android:padding="16dp"/>
+
+    <Button
+        android:id="@+id/btnSexta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sexta-feira"
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="#2196F3"
+        android:padding="16dp"/>
+
+    <Button
+        android:id="@+id/btnSabado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sábado"
+        android:textSize="18sp"
+        android:backgroundTint="#2196F3"
+        android:padding="16dp"/>
+
+</LinearLayout>
