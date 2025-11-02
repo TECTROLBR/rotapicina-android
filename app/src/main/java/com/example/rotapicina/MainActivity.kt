@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
@@ -45,8 +46,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        atualizarSaudacao()
         destacarDiaAtual()
         verificarELimparTarefasNoDomingo(dias)
+    }
+
+    private fun atualizarSaudacao() {
+        val calendario = Calendar.getInstance()
+        val hora = calendario.get(Calendar.HOUR_OF_DAY)
+        val tituloSaudacao = findViewById<TextView>(R.id.tituloSaudacao)
+
+        val saudacao = when (hora) {
+            in 6..11 -> "Bom Dia, Técnico!"
+            in 12..18 -> "Boa Tarde, Técnico!"
+            in 19..23 -> "Boa Noite, Técnico!"
+            else -> "Que bela Madrugada, Técnico!"
+        }
+
+        tituloSaudacao.text = saudacao
     }
 
     private fun destacarDiaAtual() {

@@ -27,11 +27,12 @@
         android:padding="16dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/tituloSaudacao"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tarefas Semanais"
+            android:textAlignment="center"
             android:textColor="@android:color/white"
-            android:textSize="34sp"
+            android:textSize="36sp"
             android:textStyle="bold"
             android:layout_marginBottom="32dp"/>
 
