@@ -1,14 +1,15 @@
 package com.example.rotapicina
 
-import android.content.Context
+
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.text.SimpleDateFormat
@@ -25,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        sharedPreferences = getSharedPreferences("TAREFAS_APP", Context.MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("TAREFAS_APP", MODE_PRIVATE)
 
         val dias = listOf("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado")
         val botoes = listOf(
@@ -68,13 +69,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun destacarDiaAtual() {
         val calendario = Calendar.getInstance()
+        val corDestaque = "#4CAF50".toColorInt()
         when (calendario.get(Calendar.DAY_OF_WEEK)) {
-            Calendar.MONDAY -> findViewById<Button>(R.id.btnSegunda).setBackgroundColor(Color.parseColor("#4CAF50"))
-            Calendar.TUESDAY -> findViewById<Button>(R.id.btnTerca).setBackgroundColor(Color.parseColor("#4CAF50"))
-            Calendar.WEDNESDAY -> findViewById<Button>(R.id.btnQuarta).setBackgroundColor(Color.parseColor("#4CAF50"))
-            Calendar.THURSDAY -> findViewById<Button>(R.id.btnQuinta).setBackgroundColor(Color.parseColor("#4CAF50"))
-            Calendar.FRIDAY -> findViewById<Button>(R.id.btnSexta).setBackgroundColor(Color.parseColor("#4CAF50"))
-            Calendar.SATURDAY -> findViewById<Button>(R.id.btnSabado).setBackgroundColor(Color.parseColor("#4CAF50"))
+            Calendar.MONDAY -> findViewById<Button>(R.id.btnSegunda).setBackgroundColor(corDestaque)
+            Calendar.TUESDAY -> findViewById<Button>(R.id.btnTerca).setBackgroundColor(corDestaque)
+            Calendar.WEDNESDAY -> findViewById<Button>(R.id.btnQuarta).setBackgroundColor(corDestaque)
+            Calendar.THURSDAY -> findViewById<Button>(R.id.btnQuinta).setBackgroundColor(corDestaque)
+            Calendar.FRIDAY -> findViewById<Button>(R.id.btnSexta).setBackgroundColor(corDestaque)
+            Calendar.SATURDAY -> findViewById<Button>(R.id.btnSabado).setBackgroundColor(corDestaque)
         }
     }
 
@@ -85,24 +87,22 @@ class MainActivity : AppCompatActivity() {
 
         // Se for domingo e a limpeza ainda não foi feita hoje
         if (calendario.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY && hoje != ultimaLimpeza) {
-            val editor = sharedPreferences.edit()
+            sharedPreferences.edit {
+                dias.forEach { dia ->
+                    val chave = "lista_tarefas_$dia"
+                    val tarefasJson = sharedPreferences.getString(chave, null)
+                    if (tarefasJson != null) {
+                        val tipo = object : TypeToken<ArrayList<Tarefa>>() {}.type
+                        val tarefas: ArrayList<Tarefa> = gson.fromJson(tarefasJson, tipo)
 
-            dias.forEach { dia ->
-                val chave = "lista_tarefas_$dia"
-                val tarefasJson = sharedPreferences.getString(chave, null)
-                if (tarefasJson != null) {
-                    val tipo = object : TypeToken<ArrayList<Tarefa>>() {}.type
-                    val tarefas: ArrayList<Tarefa> = gson.fromJson(tarefasJson, tipo)
+                        tarefas.forEach { it.concluida = false } // Desmarca todas as tarefas
 
-                    tarefas.forEach { it.concluida = false } // Desmarca todas as tarefas
-
-                    val novoJson = gson.toJson(tarefas)
-                    editor.putString(chave, novoJson)
+                        val novoJson = gson.toJson(tarefas)
+                        putString(chave, novoJson)
+                    }
                 }
+                putString("ultima_limpeza", hoje) // Salva a data da limpeza
             }
-
-            editor.putString("ultima_limpeza", hoje) // Salva a data da limpeza
-            editor.apply()
 
             // Exibe a notificação para o usuário
             Toast.makeText(this, "Tarefas da semana reiniciadas!", Toast.LENGTH_LONG).show()

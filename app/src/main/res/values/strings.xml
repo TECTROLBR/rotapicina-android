@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">rota picina</string>
+    <string name="titulo_tarefas_dia">Tarefas de %1$s</string>
 </resources>

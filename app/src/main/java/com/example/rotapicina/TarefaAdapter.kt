@@ -18,14 +18,14 @@ class TarefaAdapter(
     private val tarefas: List<Tarefa>,
     private val onTarefaClick: (Tarefa) -> Unit,
     private val onTarefaLongClick: (Tarefa) -> Unit,
-    private val onTarefaEditClick: (Tarefa) -> Unit // Novo callback para edição
+    private val onTarefaEditClick: (Tarefa) -> Unit
 ) : RecyclerView.Adapter<TarefaAdapter.TarefaViewHolder>() {
 
     inner class TarefaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val checkBox: CheckBox = view.findViewById(R.id.checkTarefa)
         val textoTarefa: TextView = view.findViewById(R.id.textoTarefa)
         val textoHorario: TextView = view.findViewById(R.id.textoHorario)
-        val btnEditar: ImageButton = view.findViewById(R.id.btnEditar) // Botão de editar
+        val btnEditar: ImageButton = view.findViewById(R.id.btnEditar)
         val btnIr: ImageButton = view.findViewById(R.id.btnIr)
 
         fun bind(tarefa: Tarefa) {
@@ -49,12 +49,22 @@ class TarefaAdapter(
 
             if (!tarefa.localizacao.isNullOrBlank()) {
                 btnIr.visibility = View.VISIBLE
-                btnIr.setOnClickListener { /* ...código do botão Ir... */ }
+                btnIr.setOnClickListener {
+                    val context = itemView.context
+                    val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(tarefa.localizacao)}")
+                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+
+                    try {
+                        context.startActivity(mapIntent)
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(context, "Nenhum aplicativo de mapa encontrado.", Toast.LENGTH_SHORT).show()
+                        Log.e("TarefaAdapter", "Erro ao abrir mapa: ", e)
+                    }
+                }
             } else {
                 btnIr.visibility = View.GONE
             }
 
-            // Configura o clique para o botão de editar
             btnEditar.setOnClickListener {
                 onTarefaEditClick(tarefa)
             }

@@ -1,6 +1,5 @@
 package com.example.rotapicina
 
-import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,6 +7,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -29,11 +29,11 @@ class TarefasActivity : AppCompatActivity() {
         setContentView(R.layout.activity_tarefas)
 
         diaSemana = intent.getStringExtra("DIA_SEMANA") ?: ""
-        sharedPreferences = getSharedPreferences("TAREFAS_APP", Context.MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("TAREFAS_APP", MODE_PRIVATE)
 
         val titulo = findViewById<TextView>(R.id.tituloDia)
         contadorTarefas = findViewById(R.id.contadorTarefas)
-        titulo.text = "Tarefas de $diaSemana"
+        titulo.text = getString(R.string.titulo_tarefas_dia, diaSemana)
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerTarefas)
         recycler.layoutManager = LinearLayoutManager(this)
@@ -42,7 +42,7 @@ class TarefasActivity : AppCompatActivity() {
             tarefas,
             onTarefaClick = { tarefa ->
                 tarefa.concluida = !tarefa.concluida
-                ordenarESalvar() // Reordena e salva, atualizando o contador
+                ordenarESalvar()
             },
             onTarefaLongClick = { tarefa ->
                 tarefas.remove(tarefa)
@@ -85,7 +85,7 @@ class TarefasActivity : AppCompatActivity() {
 
             if (textoTarefa.isNotEmpty()) {
                 val horario = textoHorario.toIntOrNull()
-                val localizacao = if (textoLocalizacao.isNotEmpty()) textoLocalizacao else null
+                val localizacao = textoLocalizacao.ifEmpty { null }
                 val novaTarefa = Tarefa(textoTarefa, false, localizacao, horario)
                 tarefas.add(novaTarefa)
                 ordenarESalvar()
@@ -120,7 +120,7 @@ class TarefasActivity : AppCompatActivity() {
 
             if (textoTarefa.isNotEmpty()) {
                 tarefa.texto = textoTarefa
-                tarefa.localizacao = if (textoLocalizacao.isNotEmpty()) textoLocalizacao else null
+                tarefa.localizacao = textoLocalizacao.ifEmpty { null }
                 tarefa.horario = textoHorario.toIntOrNull()
                 ordenarESalvar()
             }
@@ -135,16 +135,16 @@ class TarefasActivity : AppCompatActivity() {
 
     private fun ordenarESalvar() {
         tarefas.sortWith(compareBy({ it.horario == null }, { it.horario }))
-        adapter.notifyDataSetChanged()
+        adapter.notifyDataSetChanged() // Manter por enquanto para simplicidade
         salvarTarefas()
-        atualizarContador() // Atualiza o contador
+        atualizarContador()
     }
 
     private fun salvarTarefas() {
-        val editor = sharedPreferences.edit()
-        val tarefasJson = gson.toJson(tarefas)
-        editor.putString("lista_tarefas_$diaSemana", tarefasJson)
-        editor.apply()
+        sharedPreferences.edit {
+            val tarefasJson = gson.toJson(tarefas)
+            putString("lista_tarefas_$diaSemana", tarefasJson)
+        }
     }
 
     private fun carregarTarefas() {
@@ -156,7 +156,7 @@ class TarefasActivity : AppCompatActivity() {
             tarefas.addAll(tarefasSalvas)
             ordenarESalvar()
         } else {
-            atualizarContador() // Garante que o contador apareça como 0/0 se não houver tarefas
+            atualizarContador()
         }
     }
 }
