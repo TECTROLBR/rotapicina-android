@@ -1,8 +1,8 @@
 package com.example.rotapicina
 
-
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -70,13 +70,15 @@ class MainActivity : AppCompatActivity() {
     private fun destacarDiaAtual() {
         val calendario = Calendar.getInstance()
         val corDestaque = "#4CAF50".toColorInt()
+        val tintList = ColorStateList.valueOf(corDestaque)
+
         when (calendario.get(Calendar.DAY_OF_WEEK)) {
-            Calendar.MONDAY -> findViewById<Button>(R.id.btnSegunda).setBackgroundColor(corDestaque)
-            Calendar.TUESDAY -> findViewById<Button>(R.id.btnTerca).setBackgroundColor(corDestaque)
-            Calendar.WEDNESDAY -> findViewById<Button>(R.id.btnQuarta).setBackgroundColor(corDestaque)
-            Calendar.THURSDAY -> findViewById<Button>(R.id.btnQuinta).setBackgroundColor(corDestaque)
-            Calendar.FRIDAY -> findViewById<Button>(R.id.btnSexta).setBackgroundColor(corDestaque)
-            Calendar.SATURDAY -> findViewById<Button>(R.id.btnSabado).setBackgroundColor(corDestaque)
+            Calendar.MONDAY -> findViewById<Button>(R.id.btnSegunda).backgroundTintList = tintList
+            Calendar.TUESDAY -> findViewById<Button>(R.id.btnTerca).backgroundTintList = tintList
+            Calendar.WEDNESDAY -> findViewById<Button>(R.id.btnQuarta).backgroundTintList = tintList
+            Calendar.THURSDAY -> findViewById<Button>(R.id.btnQuinta).backgroundTintList = tintList
+            Calendar.FRIDAY -> findViewById<Button>(R.id.btnSexta).backgroundTintList = tintList
+            Calendar.SATURDAY -> findViewById<Button>(R.id.btnSabado).backgroundTintList = tintList
         }
     }
 

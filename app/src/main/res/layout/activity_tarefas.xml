@@ -59,18 +59,27 @@
                 android:id="@+id/recyclerTarefas"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginTop="16dp" />
+                android:layout_marginTop="16dp"
+                android:clipToPadding="false"
+                android:paddingBottom="80dp" />
 
         </LinearLayout>
+
+        <com.google.android.material.bottomappbar.BottomAppBar
+            android:id="@+id/bottomAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            app:fabAlignmentMode="center"
+            app:hideOnScroll="true" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabAdicionarTarefa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
             android:src="@drawable/ic_add"
             app:backgroundTint="@color/design_default_color_primary"
+            app:layout_anchor="@id/bottomAppBar"
             app:tint="@android:color/white" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
