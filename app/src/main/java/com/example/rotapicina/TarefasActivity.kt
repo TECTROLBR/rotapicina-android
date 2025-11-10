@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.util.ArrayList
@@ -54,11 +53,6 @@ class TarefasActivity : AppCompatActivity() {
         )
         recycler.adapter = adapter
 
-        val fab = findViewById<FloatingActionButton>(R.id.fabAdicionarTarefa)
-        fab.setOnClickListener {
-            mostrarDialogoAdicionarTarefa()
-        }
-
         carregarTarefas()
     }
 
@@ -66,37 +60,6 @@ class TarefasActivity : AppCompatActivity() {
         val concluidas = tarefas.count { it.concluida }
         val total = tarefas.size
         contadorTarefas.text = "$concluidas/$total"
-    }
-
-    private fun mostrarDialogoAdicionarTarefa() {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_tarefa, null)
-        val inputTarefa = dialogView.findViewById<EditText>(R.id.inputTarefa)
-        val inputLocalizacao = dialogView.findViewById<EditText>(R.id.inputLocalizacao)
-        val inputHorario = dialogView.findViewById<EditText>(R.id.inputHorario)
-
-        val builder = AlertDialog.Builder(this)
-        builder.setView(dialogView)
-        builder.setTitle("Adicionar Tarefa")
-
-        builder.setPositiveButton("Adicionar") { dialog, _ ->
-            val textoTarefa = inputTarefa.text.toString()
-            val textoLocalizacao = inputLocalizacao.text.toString()
-            val textoHorario = inputHorario.text.toString()
-
-            if (textoTarefa.isNotEmpty()) {
-                val horario = textoHorario.toIntOrNull()
-                val localizacao = textoLocalizacao.ifEmpty { null }
-                val novaTarefa = Tarefa(textoTarefa, false, localizacao, horario)
-                tarefas.add(novaTarefa)
-                ordenarESalvar()
-            }
-            dialog.dismiss()
-        }
-        builder.setNegativeButton("Cancelar") { dialog, _ ->
-            dialog.cancel()
-        }
-
-        builder.show()
     }
 
     private fun mostrarDialogoEditarTarefa(tarefa: Tarefa) {
@@ -135,7 +98,7 @@ class TarefasActivity : AppCompatActivity() {
 
     private fun ordenarESalvar() {
         tarefas.sortWith(compareBy({ it.horario == null }, { it.horario }))
-        adapter.notifyDataSetChanged() // Manter por enquanto para simplicidade
+        adapter.notifyDataSetChanged()
         salvarTarefas()
         atualizarContador()
     }
