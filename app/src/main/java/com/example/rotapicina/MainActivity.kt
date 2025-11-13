@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -12,6 +14,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -33,6 +36,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
         sharedPreferences = getSharedPreferences("TAREFAS_APP", MODE_PRIVATE)
 
         val botoes = listOf(R.id.btnSegunda, R.id.btnTerca, R.id.btnQuarta, R.id.btnQuinta, R.id.btnSexta, R.id.btnSabado)
@@ -53,6 +59,68 @@ class MainActivity : AppCompatActivity() {
         atualizarSaudacao()
         destacarDiaAtual()
         verificarELimparTarefasNoDomingo(dias)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_limpar_tarefas -> {
+                mostrarDialogoLimparDias()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun mostrarDialogoLimparDias() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_limpar_dias, null)
+        val checkBoxes = listOf(
+            dialogView.findViewById<CheckBox>(R.id.checkSegunda),
+            dialogView.findViewById<CheckBox>(R.id.checkTerca),
+            dialogView.findViewById<CheckBox>(R.id.checkQuarta),
+            dialogView.findViewById<CheckBox>(R.id.checkQuinta),
+            dialogView.findViewById<CheckBox>(R.id.checkSexta),
+            dialogView.findViewById<CheckBox>(R.id.checkSabado)
+        )
+
+        AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setTitle("Limpar Tarefas")
+            .setPositiveButton("Limpar") { dialog, _ ->
+                val diasSelecionados = mutableListOf<String>()
+                checkBoxes.forEachIndexed { index, checkBox ->
+                    if (checkBox.isChecked) {
+                        diasSelecionados.add(dias[index])
+                    }
+                }
+
+                if (diasSelecionados.isNotEmpty()) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Atenção")
+                        .setMessage("Esta ação apagará permanentemente as tarefas dos dias selecionados. Deseja continuar?")
+                        .setPositiveButton("Apagar") { _, _ ->
+                            limparTarefasParaDias(diasSelecionados)
+                            Toast.makeText(this, "Tarefas dos dias selecionados foram limpas!", Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun limparTarefasParaDias(diasParaLimpar: List<String>) {
+        sharedPreferences.edit {
+            diasParaLimpar.forEach { dia ->
+                remove("lista_tarefas_$dia")
+            }
+        }
     }
 
     private fun mostrarDialogoAdicionarTarefaRecorrente() {
@@ -96,7 +164,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancelar") { dialog, _ -> dialog.cancel() }
+            .setNegativeButton("Cancelar", null)
             .show()
     }
 

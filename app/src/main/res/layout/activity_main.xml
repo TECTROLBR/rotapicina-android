@@ -23,93 +23,106 @@
             android:layout_height="match_parent"
             android:background="#40000000" />
 
-        <!-- Conteúdo da Tela -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:id="@+id/tituloSaudacao"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAlignment="center"
-                android:textColor="@android:color/white"
-                android:textSize="36sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="32dp"/>
-
-            <!-- Botões dos dias da semana -->
-            <Button
-                android:id="@+id/btnSegunda"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Segunda-feira"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2196F3"
-                android:padding="16dp"/>
-
-            <Button
-                android:id="@+id/btnTerca"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Terça-feira"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2196F3"
-                android:padding="16dp"/>
-
-            <Button
-                android:id="@+id/btnQuarta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Quarta-feira"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2196F3"
-                android:padding="16dp"/>
-
-            <Button
-                android:id="@+id/btnQuinta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Quinta-feira"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2196F3"
-                android:padding="16dp"/>
-
-            <Button
-                android:id="@+id/btnSexta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Sexta-feira"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:layout_marginBottom="12dp"
-                android:backgroundTint="#2196F3"
-                android:padding="16dp"/>
-
-            <Button
-                android:id="@+id/btnSabado"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Sábado"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:backgroundTint="#2196F3"
-                android:padding="16dp"/>
-
-        </LinearLayout>
-
     </FrameLayout>
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Conteúdo da Tela -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tituloSaudacao"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- Botões dos dias da semana -->
+        <Button
+            android:id="@+id/btnSegunda"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Segunda-feira"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="#2196F3"
+            android:padding="16dp"/>
+
+        <Button
+            android:id="@+id/btnTerca"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Terça-feira"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="#2196F3"
+            android:padding="16dp"/>
+
+        <Button
+            android:id="@+id/btnQuarta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Quarta-feira"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="#2196F3"
+            android:padding="16dp"/>
+
+        <Button
+            android:id="@+id/btnQuinta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Quinta-feira"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="#2196F3"
+            android:padding="16dp"/>
+
+        <Button
+            android:id="@+id/btnSexta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sexta-feira"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="#2196F3"
+            android:padding="16dp"/>
+
+        <Button
+            android:id="@+id/btnSabado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sábado"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:backgroundTint="#2196F3"
+            android:padding="16dp"/>
+
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAdicionarTarefaPrincipal"
