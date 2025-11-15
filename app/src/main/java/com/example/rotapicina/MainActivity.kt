@@ -1,7 +1,6 @@
 package com.example.rotapicina
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,29 +16,28 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.ArrayList
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var sharedPreferences: SharedPreferences
-    private val gson = Gson()
     private val dias = listOf("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado")
+    private lateinit var db: AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        db = AppDatabase.getDatabase(this)
+
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-
-        sharedPreferences = getSharedPreferences("TAREFAS_APP", MODE_PRIVATE)
 
         val botoes = listOf(R.id.btnSegunda, R.id.btnTerca, R.id.btnQuarta, R.id.btnQuinta, R.id.btnSexta, R.id.btnSabado)
 
@@ -58,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
         atualizarSaudacao()
         destacarDiaAtual()
-        verificarELimparTarefasNoDomingo(dias)
+        verificarELimparTarefasNoDomingo()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -72,8 +70,21 @@ class MainActivity : AppCompatActivity() {
                 mostrarDialogoLimparDias()
                 true
             }
+            R.id.action_sobre -> {
+                mostrarDialogoSobre()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun mostrarDialogoSobre() {
+        val versao = packageManager.getPackageInfo(packageName, 0).versionName
+        AlertDialog.Builder(this)
+            .setTitle("Sobre o App")
+            .setMessage("Piscina Fácil\nVersão: $versao\n\n© 2024 Denys Mota\nhakermota@gmail.com")
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun mostrarDialogoLimparDias() {
@@ -90,12 +101,9 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setView(dialogView)
             .setTitle("Limpar Tarefas")
-            .setPositiveButton("Limpar") { dialog, _ ->
-                val diasSelecionados = mutableListOf<String>()
-                checkBoxes.forEachIndexed { index, checkBox ->
-                    if (checkBox.isChecked) {
-                        diasSelecionados.add(dias[index])
-                    }
+            .setPositiveButton("Limpar") { _, _ ->
+                val diasSelecionados = checkBoxes.mapIndexedNotNull { index, checkBox ->
+                    if (checkBox.isChecked) dias[index] else null
                 }
 
                 if (diasSelecionados.isNotEmpty()) {
@@ -104,22 +112,19 @@ class MainActivity : AppCompatActivity() {
                         .setMessage("Esta ação apagará permanentemente as tarefas dos dias selecionados. Deseja continuar?")
                         .setPositiveButton("Apagar") { _, _ ->
                             limparTarefasParaDias(diasSelecionados)
-                            Toast.makeText(this, "Tarefas dos dias selecionados foram limpas!", Toast.LENGTH_SHORT).show()
                         }
                         .setNegativeButton("Cancelar", null)
                         .show()
                 }
-                dialog.dismiss()
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
     private fun limparTarefasParaDias(diasParaLimpar: List<String>) {
-        sharedPreferences.edit {
-            diasParaLimpar.forEach { dia ->
-                remove("lista_tarefas_$dia")
-            }
+        lifecycleScope.launch {
+            db.tarefaDao().deleteTarefasPorDias(diasParaLimpar)
+            Toast.makeText(this@MainActivity, "Tarefas dos dias selecionados foram limpas!", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -128,7 +133,6 @@ class MainActivity : AppCompatActivity() {
         val inputTarefa = dialogView.findViewById<EditText>(R.id.inputTarefa)
         val inputLocalizacao = dialogView.findViewById<EditText>(R.id.inputLocalizacao)
         val inputHorario = dialogView.findViewById<EditText>(R.id.inputHorario)
-
         val checkBoxes = listOf(
             dialogView.findViewById<CheckBox>(R.id.checkSegunda),
             dialogView.findViewById<CheckBox>(R.id.checkTerca),
@@ -141,47 +145,49 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setView(dialogView)
             .setTitle("Adicionar Tarefa Recorrente")
-            .setPositiveButton("Adicionar") { dialog, _ ->
+            .setPositiveButton("Adicionar") { _, _ ->
                 val textoTarefa = inputTarefa.text.toString()
                 if (textoTarefa.isNotEmpty()) {
                     val textoLocalizacao = inputLocalizacao.text.toString()
                     val textoHorario = inputHorario.text.toString()
-                    val horario = textoHorario.toIntOrNull()
-                    val localizacao = textoLocalizacao.ifEmpty { null }
 
-                    val diasSelecionados = mutableListOf<String>()
-                    checkBoxes.forEachIndexed { index, checkBox ->
-                        if (checkBox.isChecked) {
-                            diasSelecionados.add(dias[index])
-                        }
+                    val diasSelecionados = checkBoxes.mapIndexedNotNull { index, checkBox ->
+                        if (checkBox.isChecked) dias[index] else null
                     }
 
                     if (diasSelecionados.isNotEmpty()) {
-                        val novaTarefa = Tarefa(textoTarefa, false, localizacao, horario)
-                        salvarTarefaParaDias(novaTarefa, diasSelecionados)
-                        Toast.makeText(this, "Tarefa adicionada aos dias selecionados!", Toast.LENGTH_SHORT).show()
+                        lifecycleScope.launch {
+                            val groupId = UUID.randomUUID().toString()
+                            diasSelecionados.forEach { dia ->
+                                val novaTarefa = Tarefa(
+                                    groupId = groupId,
+                                    texto = textoTarefa,
+                                    localizacao = textoLocalizacao.ifEmpty { null },
+                                    horario = textoHorario.toIntOrNull(),
+                                    diaSemana = dia
+                                )
+                                db.tarefaDao().insert(novaTarefa)
+                            }
+                            Toast.makeText(this@MainActivity, "Tarefa adicionada aos dias selecionados!", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
-                dialog.dismiss()
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
-    private fun salvarTarefaParaDias(tarefa: Tarefa, dias: List<String>) {
-        sharedPreferences.edit {
-            dias.forEach { dia ->
-                val chave = "lista_tarefas_$dia"
-                val tarefasJson = sharedPreferences.getString(chave, null)
-                val tarefasSalvas: ArrayList<Tarefa> = if (tarefasJson != null) {
-                    val tipo = object : TypeToken<ArrayList<Tarefa>>() {}.type
-                    gson.fromJson(tarefasJson, tipo)
-                } else {
-                    ArrayList()
-                }
-                tarefasSalvas.add(Tarefa(tarefa.texto, tarefa.concluida, tarefa.localizacao, tarefa.horario)) // Cria uma cópia
-                tarefasSalvas.sortWith(compareBy({ it.horario == null }, { it.horario }))
-                putString(chave, gson.toJson(tarefasSalvas))
+    private fun verificarELimparTarefasNoDomingo() {
+        val calendario = Calendar.getInstance()
+        val sharedPrefs = getSharedPreferences("ULTIMA_LIMPEZA_PREFS", MODE_PRIVATE)
+        val hoje = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val ultimaLimpeza = sharedPrefs.getString("ultima_limpeza_data", null)
+
+        if (calendario.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY && hoje != ultimaLimpeza) {
+            lifecycleScope.launch {
+                db.tarefaDao().desmarcarTodasTarefas()
+                sharedPrefs.edit { putString("ultima_limpeza_data", hoje) }
+                Toast.makeText(this@MainActivity, "Tarefas da semana reiniciadas!", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -206,40 +212,18 @@ class MainActivity : AppCompatActivity() {
         val corDestaque = "#4CAF50".toColorInt()
         val tintList = ColorStateList.valueOf(corDestaque)
 
-        when (calendario.get(Calendar.DAY_OF_WEEK)) {
-            Calendar.MONDAY -> findViewById<Button>(R.id.btnSegunda).backgroundTintList = tintList
-            Calendar.TUESDAY -> findViewById<Button>(R.id.btnTerca).backgroundTintList = tintList
-            Calendar.WEDNESDAY -> findViewById<Button>(R.id.btnQuarta).backgroundTintList = tintList
-            Calendar.THURSDAY -> findViewById<Button>(R.id.btnQuinta).backgroundTintList = tintList
-            Calendar.FRIDAY -> findViewById<Button>(R.id.btnSexta).backgroundTintList = tintList
-            Calendar.SATURDAY -> findViewById<Button>(R.id.btnSabado).backgroundTintList = tintList
-        }
-    }
+        val dayToButtonIdMap = mapOf(
+            Calendar.MONDAY to R.id.btnSegunda,
+            Calendar.TUESDAY to R.id.btnTerca,
+            Calendar.WEDNESDAY to R.id.btnQuarta,
+            Calendar.THURSDAY to R.id.btnQuinta,
+            Calendar.FRIDAY to R.id.btnSexta,
+            Calendar.SATURDAY to R.id.btnSabado
+        )
 
-    private fun verificarELimparTarefasNoDomingo(dias: List<String>) {
-        val calendario = Calendar.getInstance()
-        val hoje = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val ultimaLimpeza = sharedPreferences.getString("ultima_limpeza", null)
-
-        if (calendario.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY && hoje != ultimaLimpeza) {
-            sharedPreferences.edit {
-                dias.forEach { dia ->
-                    val chave = "lista_tarefas_$dia"
-                    val tarefasJson = sharedPreferences.getString(chave, null)
-                    if (tarefasJson != null) {
-                        val tipo = object : TypeToken<ArrayList<Tarefa>>() {}.type
-                        val tarefas: ArrayList<Tarefa> = gson.fromJson(tarefasJson, tipo)
-
-                        tarefas.forEach { it.concluida = false }
-
-                        val novoJson = gson.toJson(tarefas)
-                        putString(chave, novoJson)
-                    }
-                }
-                putString("ultima_limpeza", hoje)
-            }
-
-            Toast.makeText(this, "Tarefas da semana reiniciadas!", Toast.LENGTH_LONG).show()
+        val today = calendario.get(Calendar.DAY_OF_WEEK)
+        dayToButtonIdMap[today]?.let { buttonId ->
+            findViewById<Button>(buttonId).backgroundTintList = tintList
         }
     }
 }

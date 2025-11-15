@@ -12,35 +12,35 @@ import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
 class TarefaAdapter(
-    private val tarefas: List<Tarefa>,
     private val onTarefaClick: (Tarefa) -> Unit,
     private val onTarefaLongClick: (Tarefa) -> Unit,
     private val onTarefaEditClick: (Tarefa) -> Unit,
-    private val onProvaClick: (Tarefa) -> Unit // Novo callback
-) : RecyclerView.Adapter<TarefaAdapter.TarefaViewHolder>() {
+    private val onProvaClick: (Tarefa) -> Unit
+) : ListAdapter<Tarefa, TarefaAdapter.TarefaViewHolder>(TarefaDiffCallback()) {
 
     inner class TarefaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val checkBox: CheckBox = view.findViewById(R.id.checkTarefa)
-        val textoTarefa: TextView = view.findViewById(R.id.textoTarefa)
-        val textoHorario: TextView = view.findViewById(R.id.textoHorario)
-        val btnProva: ImageButton = view.findViewById(R.id.btnProva) // Novo botão
-        val btnEditar: ImageButton = view.findViewById(R.id.btnEditar)
-        val btnIr: ImageButton = view.findViewById(R.id.btnIr)
+        private val checkBox: CheckBox = view.findViewById(R.id.checkTarefa)
+        private val textoTarefa: TextView = view.findViewById(R.id.textoTarefa)
+        private val textoHorario: TextView = view.findViewById(R.id.textoHorario)
+        private val btnProva: ImageButton = view.findViewById(R.id.btnProva)
+        private val btnEditar: ImageButton = view.findViewById(R.id.btnEditar)
+        private val btnIr: ImageButton = view.findViewById(R.id.btnIr)
 
         fun bind(tarefa: Tarefa) {
             checkBox.isChecked = tarefa.concluida
             textoTarefa.text = tarefa.texto
 
-            if (tarefa.concluida) {
-                textoTarefa.paintFlags = textoTarefa.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-                textoTarefa.alpha = 0.5f
+            textoTarefa.paintFlags = if (tarefa.concluida) {
+                textoTarefa.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             } else {
-                textoTarefa.paintFlags = textoTarefa.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-                textoTarefa.alpha = 1.0f
+                textoTarefa.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
             }
+            textoTarefa.alpha = if (tarefa.concluida) 0.5f else 1.0f
 
             if (tarefa.horario != null) {
                 textoHorario.visibility = View.VISIBLE
@@ -51,40 +51,44 @@ class TarefaAdapter(
 
             if (!tarefa.localizacao.isNullOrBlank()) {
                 btnIr.visibility = View.VISIBLE
-                btnIr.setOnClickListener { /* ...código existente... */ }
+                btnIr.setOnClickListener {
+                    val context = itemView.context
+                    val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(tarefa.localizacao)}")
+                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                    try {
+                        context.startActivity(mapIntent)
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(context, "Nenhum aplicativo de mapa encontrado.", Toast.LENGTH_SHORT).show()
+                        Log.e("TarefaAdapter", "Erro ao abrir mapa: ", e)
+                    }
+                }
             } else {
                 btnIr.visibility = View.GONE
             }
 
-            // Configura o clique para o novo botão de prova
-            btnProva.setOnClickListener {
-                onProvaClick(tarefa)
-            }
-
-            btnEditar.setOnClickListener {
-                onTarefaEditClick(tarefa)
-            }
-
-            itemView.setOnLongClickListener {
-                onTarefaLongClick(tarefa)
-                true
-            }
-
-            checkBox.setOnClickListener {
-                onTarefaClick(tarefa)
-            }
+            btnProva.setOnClickListener { onProvaClick(tarefa) }
+            btnEditar.setOnClickListener { onTarefaEditClick(tarefa) }
+            itemView.setOnLongClickListener { onTarefaLongClick(tarefa); true }
+            checkBox.setOnClickListener { onTarefaClick(tarefa) }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TarefaViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_tarefa, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_tarefa, parent, false)
         return TarefaViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: TarefaViewHolder, position: Int) {
-        holder.bind(tarefas[position])
+        holder.bind(getItem(position))
+    }
+}
+
+class TarefaDiffCallback : DiffUtil.ItemCallback<Tarefa>() {
+    override fun areItemsTheSame(oldItem: Tarefa, newItem: Tarefa): Boolean {
+        return oldItem.id == newItem.id
     }
 
-    override fun getItemCount() = tarefas.size
+    override fun areContentsTheSame(oldItem: Tarefa, newItem: Tarefa): Boolean {
+        return oldItem == newItem
+    }
 }

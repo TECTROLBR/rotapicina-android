@@ -6,6 +6,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:icon="@mipmap/ic_launcher"
@@ -26,6 +27,10 @@
         <activity
             android:name=".TarefasActivity"
             android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".CameraActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

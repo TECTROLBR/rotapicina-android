@@ -1,51 +1,38 @@
 package com.example.rotapicina
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
-import androidx.core.content.edit
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import java.io.File
 import java.util.ArrayList
 
 class TarefasActivity : AppCompatActivity() {
 
     private lateinit var diaSemana: String
-    private val tarefas = ArrayList<Tarefa>()
+    private val tarefasViewModel: TarefasViewModel by viewModels()
     private lateinit var adapter: TarefaAdapter
-    private val gson = Gson()
-    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var contadorTarefas: TextView
 
     private var tarefaAtual: Tarefa? = null
-    private var videoUri: Uri? = null
-
-    private val permissaoCameraLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            lancarCamera()
-        } else {
-            Toast.makeText(this, "Permissão de câmera negada.", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            videoUri?.let { compartilharVideo(it) }
+            val videoUris = result.data?.getStringArrayListExtra("video_uris")
+            if (!videoUris.isNullOrEmpty()) {
+                val uris = videoUris.map { Uri.parse(it) } as ArrayList<Uri>
+                compartilharVideos(uris)
+            }
         }
     }
 
@@ -54,82 +41,45 @@ class TarefasActivity : AppCompatActivity() {
         setContentView(R.layout.activity_tarefas)
 
         diaSemana = intent.getStringExtra("DIA_SEMANA") ?: ""
-        sharedPreferences = getSharedPreferences("TAREFAS_APP", MODE_PRIVATE)
 
         val titulo = findViewById<TextView>(R.id.tituloDia)
         contadorTarefas = findViewById(R.id.contadorTarefas)
         titulo.text = getString(R.string.titulo_tarefas_dia, diaSemana)
 
+        setupRecyclerView()
+        observeViewModel()
+
+        tarefasViewModel.carregarTarefas(diaSemana)
+    }
+
+    private fun setupRecyclerView() {
         val recycler = findViewById<RecyclerView>(R.id.recyclerTarefas)
         recycler.layoutManager = LinearLayoutManager(this)
-
         adapter = TarefaAdapter(
-            tarefas,
-            onTarefaClick = { tarefa ->
-                tarefa.concluida = !tarefa.concluida
-                ordenarESalvar()
-            },
-            onTarefaLongClick = { tarefa ->
-                tarefas.remove(tarefa)
-                ordenarESalvar()
-            },
-            onTarefaEditClick = { tarefa ->
-                mostrarDialogoEditarTarefa(tarefa)
-            },
-            onProvaClick = { tarefa ->
-                iniciarFluxoDeProva(tarefa)
-            }
+            onTarefaClick = { tarefa -> tarefasViewModel.updateTarefa(tarefa.apply { concluida = !concluida }) },
+            onTarefaLongClick = { tarefa -> onTarefaDelete(tarefa) },
+            onTarefaEditClick = { tarefa -> mostrarDialogoEditarTarefa(tarefa) },
+            onProvaClick = { tarefa -> iniciarFluxoDeProva(tarefa) }
         )
         recycler.adapter = adapter
-
-        carregarTarefas()
     }
 
-    private fun iniciarFluxoDeProva(tarefa: Tarefa) {
-        tarefaAtual = tarefa
-        permissaoCameraLauncher.launch(Manifest.permission.CAMERA)
+    private fun observeViewModel() {
+        tarefasViewModel.tarefas.observe(this, Observer { tarefas ->
+            adapter.submitList(tarefas)
+            atualizarContador(tarefas)
+        })
     }
 
-    private fun lancarCamera() {
-        val videoFile = File(filesDir, "video_prova.mp4")
-        videoUri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.provider", videoFile)
-
-        val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, videoUri)
-        }
-        cameraLauncher.launch(intent)
-    }
-
-    private fun compartilharVideo(uri: Uri) {
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "video/*"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_TEXT, tarefaAtual?.texto) // Adiciona o texto da tarefa
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        try {
-            shareIntent.`package` = "com.whatsapp.w4b" // Tenta o WhatsApp Business
-            startActivity(shareIntent)
-        } catch (e: Exception) {
-            try {
-                shareIntent.`package` = "com.whatsapp" // Tenta o WhatsApp normal
-                startActivity(shareIntent)
-            } catch (e2: Exception) {
-                Toast.makeText(this, "WhatsApp ou WhatsApp Business não instalado.", Toast.LENGTH_SHORT).show()
+    private fun onTarefaDelete(tarefa: Tarefa) {
+        AlertDialog.Builder(this)
+            .setTitle("Excluir Tarefa")
+            .setMessage("Tem certeza que deseja excluir esta tarefa?")
+            .setPositiveButton("Excluir") { _, _ ->
+                tarefasViewModel.deleteTarefa(tarefa)
             }
-        }
-
-        tarefaAtual?.let {
-            it.concluida = true
-            ordenarESalvar()
-        }
-    }
-
-    private fun atualizarContador() {
-        val concluidas = tarefas.count { it.concluida }
-        val total = tarefas.size
-        contadorTarefas.text = "$concluidas/$total"
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun mostrarDialogoEditarTarefa(tarefa: Tarefa) {
@@ -142,54 +92,54 @@ class TarefasActivity : AppCompatActivity() {
         inputLocalizacao.setText(tarefa.localizacao ?: "")
         inputHorario.setText(tarefa.horario?.toString() ?: "")
 
-        val builder = AlertDialog.Builder(this)
-        builder.setView(dialogView)
-        builder.setTitle("Editar Tarefa")
+        AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setTitle("Editar Tarefa")
+            .setPositiveButton("Salvar") { _, _ ->
+                val novoTexto = inputTarefa.text.toString()
+                val novaLocalizacao = inputLocalizacao.text.toString().ifEmpty { null }
+                val novoHorario = inputHorario.text.toString().toIntOrNull()
 
-        builder.setPositiveButton("Salvar") { dialog, _ ->
-            val textoTarefa = inputTarefa.text.toString()
-            val textoLocalizacao = inputLocalizacao.text.toString()
-            val textoHorario = inputHorario.text.toString()
-
-            if (textoTarefa.isNotEmpty()) {
-                tarefa.texto = textoTarefa
-                tarefa.localizacao = textoLocalizacao.ifEmpty { null }
-                tarefa.horario = textoHorario.toIntOrNull()
-                ordenarESalvar()
+                if (novoTexto.isNotEmpty()) {
+                    val tarefaAtualizada = tarefa.copy(texto = novoTexto, localizacao = novaLocalizacao, horario = novoHorario)
+                    tarefasViewModel.updateByGroupId(tarefaAtualizada)
+                }
             }
-            dialog.dismiss()
-        }
-        builder.setNegativeButton("Cancelar") { dialog, _ ->
-            dialog.cancel()
-        }
-
-        builder.show()
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
-    private fun ordenarESalvar() {
-        tarefas.sortWith(compareBy({ it.horario == null }, { it.horario }))
-        adapter.notifyDataSetChanged()
-        salvarTarefas()
-        atualizarContador()
+    private fun iniciarFluxoDeProva(tarefa: Tarefa) {
+        tarefaAtual = tarefa
+        val intent = Intent(this, CameraActivity::class.java)
+        cameraLauncher.launch(intent)
     }
 
-    private fun salvarTarefas() {
-        sharedPreferences.edit {
-            val tarefasJson = gson.toJson(tarefas)
-            putString("lista_tarefas_$diaSemana", tarefasJson)
+    private fun compartilharVideos(uris: ArrayList<Uri>) {
+        val shareIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = "video/*"
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+            putExtra(Intent.EXTRA_TEXT, tarefaAtual?.texto)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
+
+        try {
+            shareIntent.`package` = "com.whatsapp.w4b"
+            startActivity(shareIntent)
+        } catch (e: Exception) {
+            try {
+                shareIntent.`package` = "com.whatsapp"
+                startActivity(shareIntent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "WhatsApp ou WhatsApp Business não instalado.", Toast.LENGTH_SHORT).show()
+            }
+        }
+        tarefaAtual?.let { tarefasViewModel.updateTarefa(it.apply { concluida = true }) }
     }
 
-    private fun carregarTarefas() {
-        val tarefasJson = sharedPreferences.getString("lista_tarefas_$diaSemana", null)
-        if (tarefasJson != null) {
-            val tipo = object : TypeToken<ArrayList<Tarefa>>() {}.type
-            val tarefasSalvas: ArrayList<Tarefa> = gson.fromJson(tarefasJson, tipo)
-            tarefas.clear()
-            tarefas.addAll(tarefasSalvas)
-            ordenarESalvar()
-        } else {
-            atualizarContador()
-        }
+    private fun atualizarContador(tarefas: List<Tarefa>) {
+        val concluidas = tarefas.count { it.concluida }
+        val total = tarefas.size
+        contadorTarefas.text = "$concluidas/$total"
     }
 }
