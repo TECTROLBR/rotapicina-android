@@ -1,17 +1,26 @@
 package com.example.rotapicina
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.io.File
 import java.util.ArrayList
 
 class TarefasActivity : AppCompatActivity() {
@@ -22,6 +31,23 @@ class TarefasActivity : AppCompatActivity() {
     private val gson = Gson()
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var contadorTarefas: TextView
+
+    private var tarefaAtual: Tarefa? = null
+    private var videoUri: Uri? = null
+
+    private val permissaoCameraLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            lancarCamera()
+        } else {
+            Toast.makeText(this, "Permissão de câmera negada.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            videoUri?.let { compartilharVideo(it) }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,11 +75,55 @@ class TarefasActivity : AppCompatActivity() {
             },
             onTarefaEditClick = { tarefa ->
                 mostrarDialogoEditarTarefa(tarefa)
+            },
+            onProvaClick = { tarefa ->
+                iniciarFluxoDeProva(tarefa)
             }
         )
         recycler.adapter = adapter
 
         carregarTarefas()
+    }
+
+    private fun iniciarFluxoDeProva(tarefa: Tarefa) {
+        tarefaAtual = tarefa
+        permissaoCameraLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    private fun lancarCamera() {
+        val videoFile = File(filesDir, "video_prova.mp4")
+        videoUri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.provider", videoFile)
+
+        val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, videoUri)
+        }
+        cameraLauncher.launch(intent)
+    }
+
+    private fun compartilharVideo(uri: Uri) {
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "video/*"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, tarefaAtual?.texto) // Adiciona o texto da tarefa
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        try {
+            shareIntent.`package` = "com.whatsapp.w4b" // Tenta o WhatsApp Business
+            startActivity(shareIntent)
+        } catch (e: Exception) {
+            try {
+                shareIntent.`package` = "com.whatsapp" // Tenta o WhatsApp normal
+                startActivity(shareIntent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "WhatsApp ou WhatsApp Business não instalado.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        tarefaAtual?.let {
+            it.concluida = true
+            ordenarESalvar()
+        }
     }
 
     private fun atualizarContador() {

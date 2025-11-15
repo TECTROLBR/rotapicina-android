@@ -32,6 +32,15 @@
         android:visibility="gone" />
 
     <ImageButton
+        android:id="@+id/btnProva"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_camera"
+        app:tint="@android:color/white" />
+
+    <ImageButton
         android:id="@+id/btnEditar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

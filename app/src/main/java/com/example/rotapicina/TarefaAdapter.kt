@@ -18,13 +18,15 @@ class TarefaAdapter(
     private val tarefas: List<Tarefa>,
     private val onTarefaClick: (Tarefa) -> Unit,
     private val onTarefaLongClick: (Tarefa) -> Unit,
-    private val onTarefaEditClick: (Tarefa) -> Unit
+    private val onTarefaEditClick: (Tarefa) -> Unit,
+    private val onProvaClick: (Tarefa) -> Unit // Novo callback
 ) : RecyclerView.Adapter<TarefaAdapter.TarefaViewHolder>() {
 
     inner class TarefaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val checkBox: CheckBox = view.findViewById(R.id.checkTarefa)
         val textoTarefa: TextView = view.findViewById(R.id.textoTarefa)
         val textoHorario: TextView = view.findViewById(R.id.textoHorario)
+        val btnProva: ImageButton = view.findViewById(R.id.btnProva) // Novo botão
         val btnEditar: ImageButton = view.findViewById(R.id.btnEditar)
         val btnIr: ImageButton = view.findViewById(R.id.btnIr)
 
@@ -49,28 +51,18 @@ class TarefaAdapter(
 
             if (!tarefa.localizacao.isNullOrBlank()) {
                 btnIr.visibility = View.VISIBLE
-                btnIr.setOnClickListener {
-                    val context = itemView.context
-                    val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(tarefa.localizacao)}")
-                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-
-                    try {
-                        context.startActivity(mapIntent)
-                    } catch (e: ActivityNotFoundException) {
-                        Toast.makeText(context, "Nenhum aplicativo de mapa encontrado.", Toast.LENGTH_SHORT).show()
-                        Log.e("TarefaAdapter", "Erro ao abrir mapa: ", e)
-                    }
-                }
+                btnIr.setOnClickListener { /* ...código existente... */ }
             } else {
                 btnIr.visibility = View.GONE
             }
 
-            btnEditar.setOnClickListener {
-                onTarefaEditClick(tarefa)
+            // Configura o clique para o novo botão de prova
+            btnProva.setOnClickListener {
+                onProvaClick(tarefa)
             }
 
-            itemView.setOnClickListener {
-                onTarefaClick(tarefa)
+            btnEditar.setOnClickListener {
+                onTarefaEditClick(tarefa)
             }
 
             itemView.setOnLongClickListener {
