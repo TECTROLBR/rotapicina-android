@@ -44,4 +44,11 @@ class TarefasViewModel(application: Application) : AndroidViewModel(application)
             carregarTarefas(tarefa.diaSemana)
         }
     }
+
+    fun updateMedicoesByGroupId(tarefa: Tarefa) {
+        viewModelScope.launch {
+            tarefaDao.updateMedicoesByGroupId(tarefa.groupId, tarefa.cloro, tarefa.ph, tarefa.alcalinidade)
+            carregarTarefas(tarefa.diaSemana)
+        }
+    }
 }

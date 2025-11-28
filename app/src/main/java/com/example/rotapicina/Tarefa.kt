@@ -26,5 +26,14 @@ data class Tarefa(
     var horario: Int? = null,
 
     @ColumnInfo(name = "dia_semana")
-    var diaSemana: String
+    var diaSemana: String,
+
+    @ColumnInfo(name = "cloro")
+    var cloro: Double? = null,
+
+    @ColumnInfo(name = "ph")
+    var ph: Double? = null,
+
+    @ColumnInfo(name = "alcalinidade")
+    var alcalinidade: Double? = null
 )

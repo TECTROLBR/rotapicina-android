@@ -54,8 +54,12 @@ class MainActivity : AppCompatActivity() {
             mostrarDialogoAdicionarTarefaRecorrente()
         }
 
-        atualizarSaudacao()
         destacarDiaAtual()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        atualizarSaudacao()
         verificarELimparTarefasNoDomingo()
     }
 
@@ -179,15 +183,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun verificarELimparTarefasNoDomingo() {
         val calendario = Calendar.getInstance()
-        val sharedPrefs = getSharedPreferences("ULTIMA_LIMPEZA_PREFS", MODE_PRIVATE)
-        val hoje = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val ultimaLimpeza = sharedPrefs.getString("ultima_limpeza_data", null)
+        val diaSemana = calendario.get(Calendar.DAY_OF_WEEK)
+        val diff = diaSemana - Calendar.SUNDAY
+        calendario.add(Calendar.DAY_OF_YEAR, -diff)
 
-        if (calendario.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY && hoje != ultimaLimpeza) {
+        val sharedPrefs = getSharedPreferences("ULTIMA_LIMPEZA_PREFS", MODE_PRIVATE)
+        val domingoDaSemana = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(calendario.time)
+        val ultimaLimpeza = sharedPrefs.getString("ultima_limpeza_semana", null)
+
+        if (domingoDaSemana != ultimaLimpeza) {
             lifecycleScope.launch {
                 db.tarefaDao().desmarcarTodasTarefas()
-                sharedPrefs.edit { putString("ultima_limpeza_data", hoje) }
-                Toast.makeText(this@MainActivity, "Tarefas da semana reiniciadas!", Toast.LENGTH_LONG).show()
+                sharedPrefs.edit { putString("ultima_limpeza_semana", domingoDaSemana) }
+                Toast.makeText(this@MainActivity, "Tarefas reiniciadas para a nova semana!", Toast.LENGTH_LONG).show()
             }
         }
     }

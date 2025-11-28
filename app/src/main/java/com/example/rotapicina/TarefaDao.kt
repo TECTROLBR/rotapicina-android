@@ -29,4 +29,7 @@ interface TarefaDao {
 
     @Query("UPDATE tarefas SET texto = :texto, localizacao = :localizacao, horario = :horario WHERE group_id = :groupId")
     suspend fun updateByGroupId(groupId: String, texto: String, localizacao: String?, horario: Int?)
+
+    @Query("UPDATE tarefas SET cloro = :cloro, ph = :ph, alcalinidade = :alcalinidade WHERE group_id = :groupId")
+    suspend fun updateMedicoesByGroupId(groupId: String, cloro: Double?, ph: Double?, alcalinidade: Double?)
 }

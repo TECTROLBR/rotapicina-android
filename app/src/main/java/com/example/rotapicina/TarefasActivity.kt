@@ -59,7 +59,8 @@ class TarefasActivity : AppCompatActivity() {
             onTarefaClick = { tarefa -> tarefasViewModel.updateTarefa(tarefa.apply { concluida = !concluida }) },
             onTarefaLongClick = { tarefa -> onTarefaDelete(tarefa) },
             onTarefaEditClick = { tarefa -> mostrarDialogoEditarTarefa(tarefa) },
-            onProvaClick = { tarefa -> iniciarFluxoDeProva(tarefa) }
+            onProvaClick = { tarefa -> iniciarFluxoDeProva(tarefa) },
+            onSaveMedicao = { tarefa -> tarefasViewModel.updateMedicoesByGroupId(tarefa) }
         )
         recycler.adapter = adapter
     }
